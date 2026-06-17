@@ -1,0 +1,383 @@
+Fix and improve the entire learning platform, admin panel, mock test system, video/session handling, backup architecture, and overall UI/UX.
+
+==================================================
+1. SESSION CONTENT NOT LOADING / WRONG CONTENT TYPE
+==================================================
+
+Many course sessions are showing:
+
+"Back
+No video available for this session
+Psychiatric - 07 History Of Psychiatric Part - I
+View all sessions for this course →"
+
+Problem:
+- The system assumes every session contains a video.
+- Some sessions may contain:
+  - PDF notes
+  - embedded content
+  - images/slides
+  - text lessons
+  - external links
+  - audio
+  - downloadable files
+  - legacy video formats
+  - different schema structures
+- Existing video data may also be stored in multiple old/new formats.
+
+Tasks:
+- Investigate the actual structure of all session content types.
+- Detect content type dynamically instead of assuming video only.
+- Build a universal session content renderer.
+
+Support:
+- video
+- youtube embeds
+- mp4
+- hls/m3u8
+- iframe embeds
+- PDFs
+- docs
+- text/html lessons
+- audio
+- downloadable resources
+- mixed content sessions
+
+Create a robust content parser that:
+- supports old schema
+- supports new schema
+- supports nested objects
+- supports alternate field names
+- auto-detects playable/renderable content
+
+Fix cases where:
+- valid content exists but is not rendered
+- video URL exists in another field
+- session has non-video content
+- malformed legacy data breaks rendering
+
+Improve UI:
+- Instead of showing “No video available”
+  show proper content viewer based on actual content type.
+
+Fallback behavior:
+- If content exists → render it properly.
+- Only show “No content available” when absolutely nothing usable exists.
+
+Add:
+- logging for malformed records
+- schema debugging logs
+- unsupported content warnings
+- analytics for broken sessions
+
+Expected Result:
+- Every session should intelligently render its available content.
+- Old and new courses should work without manual fixes.
+
+==================================================
+2. TNC MOCK TEST QUESTION COUNT ISSUE
+==================================================
+
+Problem:
+- Mock tests display 100 questions.
+- Actual available questions are only 50.
+
+Tasks:
+- Fix total question calculation logic.
+- Ensure all UI sections use actual available question count.
+
+Fix:
+- pagination
+- progress tracker
+- attempted count
+- timer calculations
+- marks calculation
+- result generation
+
+Prevent:
+- empty question screens
+- undefined question states
+- broken navigation
+
+Expected Result:
+- UI should always reflect real question count accurately.
+
+==================================================
+3. NEW BATCH LECTURES NOT SHOWING
+==================================================
+
+Problem:
+- Newly created batches do not display lectures/sessions.
+
+Tasks:
+- Fix batch-to-session mapping.
+- Verify:
+  - APIs
+  - database joins
+  - filters
+  - permissions
+  - enrollment logic
+  - caching
+  - indexing
+
+Ensure:
+- new batches appear immediately
+- lectures are visible properly
+- enrolled students can access sessions
+- admin-created sessions sync correctly
+
+Add:
+- fallback handling for incomplete metadata
+- auto-repair for broken mappings
+
+==================================================
+4. MOCK TEST SOLUTION VIDEOS NOT SHOWING
+==================================================
+
+Problem:
+- Solution videos for mock tests are missing.
+
+Tasks:
+- Fix solution video retrieval logic.
+- Support:
+  - question-wise solution videos
+  - full test solution videos
+  - legacy schemas
+  - multiple video source formats
+
+Ensure:
+- solutions display after submission (based on access rules)
+- player supports all formats
+- old mocks remain compatible
+
+==================================================
+5. ADMIN PANEL IMPROVEMENTS
+==================================================
+
+Add the following admin features:
+
+A. Extend Free Access Period
+- Add ability to extend free trial/access duration for students.
+- Allow:
+  - custom expiry date
+  - extra free days
+  - batch-wise extension
+  - user-wise extension
+
+B. Student Data Loading Optimization
+Problem:
+- Student data loads very slowly.
+- Search is very slow.
+
+Tasks:
+- Optimize:
+  - database queries
+  - indexing
+  - pagination
+  - search logic
+  - caching
+  - API response size
+
+Implement:
+- server-side pagination
+- debounced search
+- indexed search fields
+- lazy loading
+- optimized joins
+
+C. Recently Registered Section
+Add:
+- “Recently Registered Students” dashboard widget
+- filters:
+  - today
+  - this week
+  - this month
+- quick actions:
+  - view profile
+  - assign batch
+  - extend access
+  - contact
+
+==================================================
+6. COMPLETE SITE TESTING & BUG FIXING
+==================================================
+
+Test the full site end-to-end:
+
+Modules:
+- auth
+- login/signup
+- payments
+- batches
+- sessions
+- videos
+- notes
+- quizzes
+- mock tests
+- results
+- admin panel
+- student dashboard
+- enrollments
+- access control
+
+Fix:
+- broken states
+- UI glitches
+- loading issues
+- API failures
+- race conditions
+- null crashes
+- hydration issues
+- mobile responsiveness
+
+==================================================
+7. SUPABASE BACKUP DATABASE SYSTEM
+==================================================
+
+I want automatic backup/sync of all production data into another Supabase database.
+
+I will provide:
+- SUPABASE_URL
+- SUPABASE_ANON_KEY
+- SERVICE_ROLE_KEY (if needed)
+
+Tasks:
+- Generate SQL schema for all tables.
+- Create migration SQL for backup database.
+- Recreate:
+  - tables
+  - relations
+  - indexes
+  - policies
+  - triggers
+  - functions
+
+Implement:
+- automatic backup sync
+- scheduled sync jobs
+- incremental sync
+- failed sync retry handling
+- data validation
+
+Backup:
+- users
+- batches
+- sessions
+- videos
+- mocks
+- questions
+- payments
+- enrollments
+- analytics
+- results
+- admin data
+
+Add:
+- sync status logs
+- backup dashboard
+- conflict handling
+
+Expected Result:
+- Entire platform data continuously backs up to secondary Supabase database safely.
+
+==================================================
+8. QUIZ & MOCK TEST EXPERIENCE UPGRADE
+==================================================
+
+Completely redesign quiz/mock experience.
+
+Add advanced features:
+- smooth transitions
+- keyboard shortcuts
+- palette navigation
+- flagged questions
+- review mode
+- instant save
+- auto-save
+- offline recovery
+- timer warnings
+- analytics
+- streaks
+- performance insights
+- difficulty analysis
+- subject analytics
+- smart recommendations
+- previous attempt comparison
+- animated progress
+- adaptive layouts
+
+Improve:
+- mobile experience
+- responsiveness
+- accessibility
+- speed
+- transitions
+
+Add:
+- immersive exam mode
+- distraction-free mode
+- fullscreen mode
+
+==================================================
+9. FULL SITE UI/UX REDESIGN
+==================================================
+
+Redesign the full website with premium Apple-inspired “Liquid Glass” UI.
+
+Design Requirements:
+- glassmorphism
+- liquid blur effects
+- smooth animations
+- premium spacing
+- translucent layers
+- modern shadows
+- floating panels
+- adaptive gradients
+- smooth transitions
+- premium typography
+- subtle motion
+- polished micro-interactions
+
+Apply to:
+- dashboard
+- course pages
+- video player
+- quizzes
+- admin panel
+- navbar
+- modals
+- cards
+- forms
+- analytics
+- tables
+
+Requirements:
+- maintain high performance
+- mobile-first responsive design
+- dark/light mode
+- accessibility support
+- modern loading skeletons
+- polished empty states
+
+==================================================
+10. IMPORTANT ENGINEERING REQUIREMENTS
+==================================================
+
+- Do NOT hardcode fixes for specific records.
+- Build reusable normalization layers.
+- Maintain backward compatibility.
+- Add proper validation everywhere.
+- Add structured error logging.
+- Improve database indexing.
+- Add monitoring/debugging tools.
+- Prevent regressions.
+
+After implementation provide:
+- root causes found
+- schema variations supported
+- performance improvements made
+- remaining invalid records
+- backup architecture explanation
+- migration notes
+- testing summary
+- optimization summary

@@ -1,0 +1,3 @@
+- [TNC CRM API pattern](tnc-crm-api.md) — POST /common/ proxy, table names, CORS workaround, no DB needed
+- [Zod v4 + react-hook-form](zod-hookform-compat.md) — use `zod` not `zod/v4` for zodResolver compatibility
+- [TNC CRM table map](tnc-crm-tables.md) — t_ch=sessions/videos (59k), t_ex=exams (6750), t_qu=questions (157k), t_se is empty

@@ -1,0 +1,800 @@
+openapi: 3.1.0
+info:
+  title: Api
+  version: 0.1.0
+  description: TNC Nursing Classes API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: courses
+    description: Course management
+  - name: content
+    description: Videos, notes, and quizzes
+  - name: auth
+    description: Authentication
+  - name: sliders
+    description: Homepage sliders
+  - name: purchases
+    description: Purchase records
+  - name: admin
+    description: Admin dashboard
+  - name: promo
+    description: Promotional mode
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /courses:
+    get:
+      operationId: getCourses
+      tags: [courses]
+      summary: Get all courses/batches
+      responses:
+        "200":
+          description: List of courses
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Course"
+
+  /sessions:
+    get:
+      operationId: listSessions
+      tags: [content]
+      summary: Get sessions (videos/content) for a course
+      parameters:
+        - name: courseId
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: type
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of sessions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Session"
+
+  /sessions/{rowId}:
+    get:
+      operationId: getSession
+      tags: [content]
+      summary: Get a single session by rowId
+      parameters:
+        - name: rowId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Session found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Session"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /sliders:
+    get:
+      operationId: getSliders
+      tags: [sliders]
+      summary: Get homepage slider images
+      responses:
+        "200":
+          description: List of sliders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Slider"
+
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: User login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginInput"
+      responses:
+        "200":
+          description: Login success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/register:
+    post:
+      operationId: register
+      tags: [auth]
+      summary: Register new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterInput"
+      responses:
+        "201":
+          description: Registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "409":
+          description: User already exists
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /purchases/{userId}:
+    get:
+      operationId: getUserPurchases
+      tags: [purchases]
+      summary: Get purchased courses for a user
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of purchases
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Purchase"
+
+  /purchases:
+    post:
+      operationId: createPurchase
+      tags: [purchases]
+      summary: Record a course purchase
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PurchaseInput"
+      responses:
+        "201":
+          description: Purchase recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Purchase"
+
+  /admin/login:
+    post:
+      operationId: adminLogin
+      tags: [admin]
+      summary: Admin login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminLoginInput"
+      responses:
+        "200":
+          description: Admin login success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminAuthResponse"
+        "401":
+          description: Invalid admin password
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /admin/stats:
+    get:
+      operationId: getAdminStats
+      tags: [admin]
+      summary: Get admin dashboard stats
+      responses:
+        "200":
+          description: Dashboard stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminStats"
+
+  /admin/users:
+    get:
+      operationId: getAdminUsers
+      tags: [admin]
+      summary: Get all users (admin)
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Paginated user list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminUsersResponse"
+
+  /promo/status:
+    get:
+      operationId: getPromoStatus
+      tags: [promo]
+      summary: Get current promo mode status
+      responses:
+        "200":
+          description: Promo status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PromoStatus"
+
+  /promo/toggle:
+    post:
+      operationId: togglePromo
+      tags: [promo]
+      summary: Toggle promotional mode (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PromoToggleInput"
+      responses:
+        "200":
+          description: Promo toggled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PromoStatus"
+
+  /quizzes:
+    get:
+      operationId: listQuizzes
+      tags: [content]
+      summary: List available quiz/exam sets
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Quiz list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuizListResponse"
+
+  /quiz/{examId}:
+    get:
+      operationId: getQuiz
+      tags: [content]
+      summary: Get a quiz/exam with all questions
+      parameters:
+        - name: examId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Quiz with questions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Quiz"
+        "404":
+          description: Quiz not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+
+    Course:
+      type: object
+      properties:
+        id:
+          type: integer
+        rowId:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        serialNo:
+          type: string
+        imageUrl:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - rowId
+        - name
+        - description
+        - serialNo
+
+    Session:
+      type: object
+      properties:
+        id:
+          type: integer
+        rowId:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        videoUrl:
+          type: ["string", "null"]
+        pdfUrl:
+          type: ["string", "null"]
+        contentType:
+          type: string
+          enum: ["youtube", "firebase", "pdf", "none"]
+        type:
+          type: string
+        courseId:
+          type: ["string", "null"]
+        subjectId:
+          type: ["string", "null"]
+        isPaid:
+          type: boolean
+        duration:
+          type: ["string", "null"]
+        thumbnailUrl:
+          type: ["string", "null"]
+        serialNo:
+          type: string
+        createdAt:
+          type: string
+      required:
+        - id
+        - rowId
+        - title
+        - isPaid
+        - serialNo
+        - contentType
+
+    Slider:
+      type: object
+      properties:
+        id:
+          type: integer
+        rowId:
+          type: string
+        imageUrl:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+      required:
+        - id
+        - rowId
+        - imageUrl
+        - name
+
+    LoginInput:
+      type: object
+      properties:
+        mobile:
+          type: string
+        password:
+          type: string
+      required:
+        - mobile
+        - password
+
+    RegisterInput:
+      type: object
+      properties:
+        name:
+          type: string
+        mobile:
+          type: string
+        password:
+          type: string
+        email:
+          type: string
+        college:
+          type: string
+        state:
+          type: string
+        city:
+          type: string
+        gender:
+          type: string
+        dob:
+          type: string
+      required:
+        - name
+        - mobile
+        - password
+
+    AuthResponse:
+      type: object
+      properties:
+        userId:
+          type: string
+        name:
+          type: string
+        mobile:
+          type: string
+        email:
+          type: ["string", "null"]
+        college:
+          type: ["string", "null"]
+        state:
+          type: ["string", "null"]
+        token:
+          type: string
+      required:
+        - userId
+        - name
+        - mobile
+        - token
+
+    Purchase:
+      type: object
+      properties:
+        id:
+          type: integer
+        rowId:
+          type: string
+        userId:
+          type: string
+        courseId:
+          type: string
+        courseName:
+          type: string
+        amount:
+          type: ["number", "null"]
+        paymentId:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+      required:
+        - id
+        - rowId
+        - userId
+        - courseId
+        - courseName
+
+    PurchaseInput:
+      type: object
+      properties:
+        userId:
+          type: string
+        courseId:
+          type: string
+        courseName:
+          type: string
+        amount:
+          type: number
+        paymentId:
+          type: string
+      required:
+        - userId
+        - courseId
+        - courseName
+
+    AdminLoginInput:
+      type: object
+      properties:
+        password:
+          type: string
+      required:
+        - password
+
+    AdminAuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        message:
+          type: string
+      required:
+        - token
+        - message
+
+    AdminStats:
+      type: object
+      properties:
+        totalUsers:
+          type: integer
+        totalCourses:
+          type: integer
+        totalSessions:
+          type: integer
+        totalPurchases:
+          type: integer
+        recentUsers:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminUserItem"
+      required:
+        - totalUsers
+        - totalCourses
+        - totalSessions
+        - totalPurchases
+        - recentUsers
+
+    AdminUserItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        rowId:
+          type: string
+        name:
+          type: string
+        mobile:
+          type: string
+        email:
+          type: ["string", "null"]
+        college:
+          type: ["string", "null"]
+        state:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+      required:
+        - id
+        - rowId
+        - name
+        - mobile
+
+    AdminUsersResponse:
+      type: object
+      properties:
+        users:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminUserItem"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+      required:
+        - users
+        - total
+        - page
+        - limit
+
+    PromoStatus:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+        expiresAt:
+          type: ["string", "null"]
+        message:
+          type: string
+      required:
+        - enabled
+        - message
+
+    PromoToggleInput:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+        durationDays:
+          type: integer
+        adminToken:
+          type: string
+      required:
+        - enabled
+        - adminToken
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    QuizMeta:
+      type: object
+      properties:
+        examId:
+          type: string
+        examNo:
+          type: integer
+        name:
+          type: string
+        maxMarks:
+          type: number
+        negativeMarks:
+          type: number
+        durationMinutes:
+          type: string
+        questionCount:
+          type: integer
+        validUntil:
+          type: ["string", "null"]
+        allowForPremium:
+          type: boolean
+        startDate:
+          type: ["string", "null"]
+        endDate:
+          type: ["string", "null"]
+      required:
+        - examId
+        - examNo
+        - name
+        - maxMarks
+        - negativeMarks
+        - durationMinutes
+        - questionCount
+        - allowForPremium
+
+    QuizListResponse:
+      type: object
+      properties:
+        quizzes:
+          type: array
+          items:
+            $ref: "#/components/schemas/QuizMeta"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+      required:
+        - quizzes
+        - total
+        - page
+        - limit
+
+    QuizQuestion:
+      type: object
+      properties:
+        rowId:
+          type: string
+        questionText:
+          type: string
+        optionA:
+          type: string
+        optionB:
+          type: string
+        optionC:
+          type: string
+        optionD:
+          type: string
+        correctAnswer:
+          type: string
+        explanation:
+          type: ["string", "null"]
+        questionNo:
+          type: ["integer", "null"]
+        questionId:
+          type: integer
+      required:
+        - rowId
+        - questionText
+        - correctAnswer
+        - optionA
+        - optionB
+        - optionC
+        - optionD
+
+    Quiz:
+      type: object
+      properties:
+        examId:
+          type: string
+        examNo:
+          type: integer
+        name:
+          type: string
+        maxMarks:
+          type: number
+        negativeMarks:
+          type: number
+        durationMinutes:
+          type: string
+        questionCount:
+          type: integer
+        validUntil:
+          type: ["string", "null"]
+        allowForPremium:
+          type: boolean
+        startDate:
+          type: ["string", "null"]
+        endDate:
+          type: ["string", "null"]
+        questions:
+          type: array
+          items:
+            $ref: "#/components/schemas/QuizQuestion"
+      required:
+        - examId
+        - name
+        - maxMarks
+        - negativeMarks
+        - durationMinutes
+        - questions

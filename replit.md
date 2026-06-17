@@ -1,0 +1,65 @@
+# TNC Nursing Classes Website
+
+India's premier nursing exam prep platform — a full-stack website reverse-engineered from the TNC Nursing Android app, using the same live CRM backend APIs.
+
+## Run & Operate
+
+- API server runs on port 8080, frontend on port 22705 (both managed by workflows)
+- `pnpm run typecheck` — full typecheck across all packages
+- `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks from OpenAPI spec after spec changes
+- `pnpm --filter @workspace/tnc-web run typecheck` — typecheck frontend only
+- `pnpm --filter @workspace/api-server run typecheck` — typecheck backend only
+
+## Stack
+
+- pnpm workspaces, Node.js 24, TypeScript 5.9
+- API: Express 5 (`artifacts/api-server`) — proxies all requests to CRM backend
+- Frontend: React + Vite + Tailwind CSS (`artifacts/tnc-web`) — Wouter routing, TanStack Query
+- Validation: Zod (use `zod` NOT `zod/v4` in frontend forms for react-hook-form compatibility)
+- API codegen: Orval (from `lib/api-spec/openapi.yaml`)
+
+## Where things live
+
+- `lib/api-spec/openapi.yaml` — OpenAPI spec (source of truth for API contract)
+- `lib/api-client-react/src/generated/api.ts` — generated React Query hooks
+- `artifacts/api-server/src/routes/proxy.ts` — all CRM proxy routes
+- `artifacts/tnc-web/src/App.tsx` — frontend routes
+- `artifacts/tnc-web/src/pages/` — all page components
+- `artifacts/tnc-web/src/components/Layout.tsx` — nav + layout wrapper
+- `artifacts/tnc-web/src/lib/auth.ts` — localStorage auth helpers
+
+## Architecture decisions
+
+- **No Replit DB** — all data from live CRM at `https://crm.tncnursing.in/`. CRM has no CORS headers so all requests are server-side proxied.
+- **CRM API pattern**: POST `/common/` with `{payload: JSON.stringify({fn, se, sch, data, cond})}`. Tables: `t_co` (courses), `t_se` (sessions), `t_sl` (sliders), `t_us` (users), `t_cu` (purchases).
+- **Promo mode** is in-memory server state (resets on server restart). Default: enabled for 30 days.
+- **Auth** is localStorage-only (no server sessions) — userId + token stored as `tnc_user`.
+- **Admin** password hardcoded as `newtncsite`, token `admin_tnc_2024_secure_token`.
+
+## Product
+
+- Home page with real slider images, course grid, stats, testimonials
+- Courses listing with search, lock/unlock based on purchase or promo mode
+- Course detail with full session list (videos + PDFs), locked unless purchased/promo
+- Video player (HLS via hls.js + YouTube iframe embed)
+- PDF viewer (iframe embed of CRM-hosted PDFs)
+- Buy page with Razorpay live payment integration
+- Login/Register using real CRM auth (mobile + password)
+- Admin panel (password: `newtncsite`) with stats, user table, promo mode toggle
+
+## User preferences
+
+_Populate as you build._
+
+## Gotchas
+
+- Always import `z` from `"zod"` (not `"zod/v4"`) in frontend form files — zodResolver from @hookform/resolvers expects zod v3 type signatures
+- CRM sessions (`t_se`) may return `false` for broad queries — handled with fallback in proxy
+- Razorpay key: `rzp_live_in5lCZ8NOaheGp` (live key, real payments)
+- WooCommerce API keys available but not used (no products returned in testing)
+- Run `pnpm --filter @workspace/api-spec run codegen` after any spec changes, then typecheck
+
+## Pointers
+
+- See `pnpm-workspace` skill for workspace structure
+- CRM API docs: reverse-engineered from APK at `attached_assets/TNC_1781079562368.apk`

@@ -1,0 +1,441 @@
+You are an elite senior reverse engineer, full-stack architect, cybersecurity engineer, API integration specialist, streaming engineer, and production deployment expert.
+
+I am attaching my Android APK file.
+
+Your task is to FULLY reverse engineer the APK and build a COMPLETE PRODUCTION-READY WEBSITE VERSION of the app using the SAME APIs, SAME DATABASE, SAME CONTENT SYSTEM, SAME ENDPOINTS, SAME AUTHENTICATION, SAME MEDIA LINKS, and SAME DATA STRUCTURE used inside the app.
+
+IMPORTANT:
+
+- DO NOT use dummy data
+- DO NOT create fake APIs
+- DO NOT create fake databases
+- DO NOT create placeholder content
+- DO NOT replace my backend
+- DO NOT modify original database structure
+- DO NOT create separate content systems
+- ONLY use real APIs and DB used by app
+- Reverse engineer deeply before coding
+
+---
+
+CORE OBJECTIVE
+
+Create a fully working premium website version of the attached mobile app.
+
+The website must:
+
+- Fetch ALL real data from app APIs
+- Use SAME backend/database as app
+- Show all real courses
+- Show all real batches
+- Show all real videos
+- Show all real PDFs
+- Show all real notes
+- Show all real quizzes
+- Show all real products/items
+- Show all real chapters
+- Show all real paid content
+- Stream videos PERFECTLY on website
+- Open PDFs directly on website
+- Never redirect users to app
+- Never open app intents/deep links
+- Never force app installation
+- Everything must work directly inside website
+
+---
+
+VERY IMPORTANT DATABASE/API RULES
+
+1. DO NOT CHANGE DATABASE
+
+- Do not alter DB schema
+- Do not migrate database
+- Do not overwrite production data
+- Do not remove tables
+- Do not break app compatibility
+
+2. USE EXISTING BACKEND ONLY
+
+- Use exact APIs/endpoints from app
+- Use exact request payloads
+- Use exact response parsing
+- Use exact auth logic
+- Use exact tokens/headers
+- Use exact content structure
+
+3. FULL APK REVERSE ENGINEERING REQUIRED
+   You MUST:
+
+- Decompile APK
+- Analyze activities/fragments
+- Extract API endpoints
+- Extract hidden APIs
+- Inspect Retrofit/OkHttp configs
+- Inspect encrypted requests
+- Extract headers/tokens
+- Extract auth methods
+- Inspect Firebase usage
+- Inspect streaming logic
+- Inspect video source handling
+- Inspect PDF systems
+- Inspect quiz systems
+- Inspect purchase systems
+- Inspect course hierarchy
+- Inspect API response models
+- Inspect media protection systems
+
+---
+
+CRITICAL VIDEO PLAYBACK REQUIREMENTS
+
+VERY IMPORTANT:
+
+VIDEOS MUST PLAY DIRECTLY ON WEBSITE.
+
+DO NOT:
+
+- Redirect to app
+- Open external player
+- Trigger app intent
+- Force mobile app install
+- Open Play Store
+- Open deep links
+
+INSTEAD:
+
+- Play videos directly inside website player
+- Use original streaming/video URLs from app
+- Use same authentication tokens if required
+- Support HLS streams (.m3u8)
+- Support MP4
+- Support adaptive streaming
+- Support protected streams
+- Support signed URLs
+- Support tokenized playback
+
+Implement:
+
+- HLS.js
+- Custom secure player
+- Resume playback
+- Continue watching
+- Playback speed
+- Fullscreen
+- Auto quality
+- Mobile optimized player
+- Keyboard shortcuts
+- Buffer handling
+- Error recovery
+- Auto retry on playback failure
+
+If video fails:
+
+- Debug API
+- Debug headers
+- Debug token auth
+- Debug stream URLs
+- Debug CORS
+- Debug signed URLs
+- Retry until fully working
+
+---
+
+PDF REQUIREMENTS
+
+PDFs must:
+
+- Open directly on website
+- Never redirect to app
+- Never download automatically unless user chooses
+- Render inside browser viewer
+- Support mobile viewing
+- Support page navigation
+- Fix:
+  Cannot GET /xxxxx.pdf
+- Fix all broken PDF paths
+- Use real PDF URLs from APIs
+
+---
+
+FREE PROMOTIONAL MODE (1 MONTH)
+
+For promotional period:
+
+- Unlock all paid courses
+- Unlock all premium batches
+- Unlock all premium videos
+- Unlock all PDFs
+- Unlock all quizzes
+- Unlock all products/items
+- Unlock all locked chapters
+
+WITHOUT PURCHASE.
+
+Implement:
+
+- Temporary unlock logic
+- Frontend access override
+- Middleware override
+- Feature flag system
+- Expiry toggle after 1 month
+
+IMPORTANT:
+
+- Do not break existing purchase system
+- Do not damage production backend
+- Promotional mode should be reversible
+
+---
+
+AUTHENTICATION RULES
+
+IMPORTANT:
+
+- Login should NOT be required if content can load publicly
+- Ask login ONLY when API requires auth
+
+Reuse app systems:
+
+- Login
+- Register
+- Forgot password
+- OTP if app uses OTP
+- Token refresh
+- Session persistence
+
+Use SAME APIs from app.
+
+---
+
+ADMIN PANEL REQUIREMENTS
+
+Create premium admin dashboard.
+
+Hardcoded admin password:
+newtncsite
+
+Admin features:
+
+- Analytics dashboard
+- Users management
+- Courses management
+- Batch management
+- Videos management
+- PDFs management
+- Quiz management
+- Promotional unlock toggle
+- Media manager
+- API monitor
+- Playback error monitor
+- Search manager
+- Leaderboards
+- Quiz analytics
+- Watch analytics
+- User activity logs
+- Error logs
+
+UI:
+
+- Glassmorphism
+- Modern
+- Animated
+- Responsive
+- Premium
+- Dark/light mode
+
+---
+
+FIX ALL CURRENT ISSUES
+
+Fix:
+
+- No courses found
+- 0 items
+- No content yet
+- Chapters will be added soon
+- Videos not playing
+- Buttons not working
+- PDFs not opening
+- Empty API responses
+- Failed requests
+- Broken filters
+- Broken search
+- API auth failures
+- Parsing failures
+- Lazy loading bugs
+- Click doing nothing
+- Broken navigation
+- Media buffering issues
+
+DO NOT stop until everything works.
+
+---
+
+FEATURES TO ADD
+
+1. GLOBAL SEARCH
+   Search across:
+
+- Courses
+- Videos
+- PDFs
+- Notes
+- Quizzes
+- Chapters
+- Products
+
+Features:
+
+- Instant search
+- Suggestions
+- Typo tolerance
+- Filters
+- Category tabs
+
+2. VIDEO PROGRESS TRACKER
+
+- Save watched progress
+- Resume playback
+- Continue watching
+- Watch history
+- Chapter completion tracking
+
+3. QUIZ HISTORY + LEADERBOARD
+
+- Quiz attempt history
+- Score analytics
+- Rankings
+- Progress tracking
+- User performance dashboard
+
+---
+
+DESIGN REQUIREMENTS
+
+Build PREMIUM MODERN UI.
+
+Use:
+
+- Next.js
+- React
+- TypeScript
+- TailwindCSS
+- Framer Motion
+
+Design style:
+
+- Glassmorphism
+- Smooth animations
+- Modern education platform
+- App-like UI
+- Beautiful dashboards
+- Floating navbar
+- Dynamic gradients
+- Skeleton loading
+- Premium cards
+- Smooth transitions
+
+Responsive:
+
+- Mobile
+- Tablet
+- Desktop
+
+---
+
+PERFORMANCE + SECURITY
+
+Implement:
+
+- Lazy loading
+- Code splitting
+- API caching
+- Skeleton loaders
+- Error boundaries
+- Retry mechanisms
+- Rate limiting
+- Secure headers
+- Token protection
+- XSS protection
+- CSRF protection
+- Sanitization
+- Monitoring/logging
+
+---
+
+TESTING REQUIREMENTS
+
+You MUST test:
+
+- Every API
+- Every page
+- Every button
+- Every route
+- Every video
+- Every PDF
+- Every quiz
+- Every search feature
+- Every filter
+- Every admin feature
+- Mobile responsiveness
+- Desktop responsiveness
+- Production build
+
+If something fails:
+
+- Debug
+- Fix
+- Retest
+- Repeat until fully working
+
+---
+
+FINAL OUTPUT REQUIRED
+
+Deliver:
+
+1. Fully working production website
+2. Full source code
+3. Deployment-ready build
+4. Environment setup
+5. API integration docs
+6. Reverse engineering findings
+7. Admin credentials
+8. Folder structure explanation
+9. Bug fixes summary
+10. Performance optimization summary
+
+---
+
+FINAL IMPORTANT RULES
+
+- NEVER use dummy data
+- NEVER create fake backend
+- NEVER modify production DB structure
+- ALWAYS use real APIs
+- ALWAYS use real content
+- NEVER redirect users to app
+- ALWAYS play videos directly on website
+- ALWAYS open PDFs directly on website
+- Use same database/backend as app
+- Reverse engineer deeply before coding
+- Fix everything until perfectly working
+- Ensure all premium content unlocked for promo mode
+- Build scalable architecture
+- Build clean reusable components
+- Ensure production quality
+
+START WORKFLOW:
+
+1. Reverse engineer APK
+2. Extract APIs/endpoints
+3. Understand app architecture
+4. Test APIs
+5. Build integration layer
+6. Build frontend
+7. Build admin panel
+8. Implement direct video playback
+9. Implement PDF viewer
+10. Fix all fetching issues
+11. Test everything extensively
+12. Prepare production deployment

@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "TNC Nursing Classes"
+version = "1.0.0"
+id = "artifacts/tnc-web"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 22705
+
+[services.development]
+run = "pnpm --filter @workspace/tnc-web run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/tnc-web", "run", "build" ]
+publicDir = "artifacts/tnc-web/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "22705"
+BASE_PATH = "/"
