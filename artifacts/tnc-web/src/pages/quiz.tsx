@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { Link } from "wouter";
 import { useListQuizzes, getListQuizzesQueryKey } from "@workspace/api-client-react";
-import { Brain, Clock, Target, ChevronRight, TrendingUp, Award, Search, AlertCircle } from "lucide-react";
+import { Brain, Clock, Target, ChevronRight, TrendingUp, Award, Search, AlertCircle, Heart } from "lucide-react";
 import Layout from "@/components/Layout";
 import { motion } from "framer-motion";
+import { isFavorite, toggleFavorite } from "@/lib/auth";
 
 function formatDuration(mins: string) {
   const n = parseInt(mins);
@@ -27,6 +28,7 @@ function getDifficultyLabel(maxMarks: number) {
 export default function QuizPage() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
+  const [, rerender] = useState(0);
   const limit = 20;
 
   const { data, isLoading } = useListQuizzes(
@@ -115,41 +117,48 @@ export default function QuizPage() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.03 }}
                 >
-                  <Link href={`/quiz/${quiz.examId}`} className="block">
-                    <div className="bg-white rounded-2xl border border-gray-100 p-4 hover:border-blue-300 hover:shadow-md transition-all group">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex-1 min-w-0">
-                          <p className="font-bold text-gray-900 text-sm leading-snug line-clamp-2 group-hover:text-blue-700 transition-colors">
-                            {quiz.name}
-                          </p>
-                          <div className="flex flex-wrap items-center gap-2 mt-2">
-                            <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${getDifficultyColor(quiz.maxMarks)}`}>
-                              {getDifficultyLabel(quiz.maxMarks)}
-                            </span>
-                            <span className="text-[11px] text-gray-500 flex items-center gap-1">
-                              <Target size={11} /> {quiz.questionCount} Qs
-                            </span>
-                            <span className="text-[11px] text-gray-500 flex items-center gap-1">
-                              <Clock size={11} /> {formatDuration(quiz.durationMinutes)}
-                            </span>
-                            <span className="text-[11px] text-gray-500">
-                              {quiz.maxMarks} marks
-                            </span>
-                          </div>
-                          {quiz.negativeMarks > 0 && (
-                            <p className="text-[11px] text-red-500 mt-1">
-                              −{quiz.negativeMarks} per wrong answer
-                            </p>
-                          )}
+                  <div className="bg-white rounded-2xl border border-gray-100 p-4 hover:border-blue-300 hover:shadow-md transition-all group">
+                    <div className="flex items-start justify-between gap-3">
+                      <Link href={`/quiz/${quiz.examId}`} className="flex-1 min-w-0">
+                        <p className="font-bold text-gray-900 text-sm leading-snug line-clamp-2 group-hover:text-blue-700 transition-colors">
+                          {quiz.name}
+                        </p>
+                        <div className="flex flex-wrap items-center gap-2 mt-2">
+                          <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${getDifficultyColor(quiz.maxMarks)}`}>
+                            {getDifficultyLabel(quiz.maxMarks)}
+                          </span>
+                          <span className="text-[11px] text-gray-500 flex items-center gap-1">
+                            <Target size={11} /> {quiz.questionCount} Qs
+                          </span>
+                          <span className="text-[11px] text-gray-500 flex items-center gap-1">
+                            <Clock size={11} /> {formatDuration(quiz.durationMinutes)}
+                          </span>
+                          <span className="text-[11px] text-gray-500">
+                            {quiz.maxMarks} marks
+                          </span>
                         </div>
-                        <div className="flex-shrink-0 self-center">
+                        {quiz.negativeMarks > 0 && (
+                          <p className="text-[11px] text-red-500 mt-1">
+                            −{quiz.negativeMarks} per wrong answer
+                          </p>
+                        )}
+                      </Link>
+                      <div className="flex flex-col items-center gap-2 flex-shrink-0">
+                        <button
+                          onClick={(e) => { e.preventDefault(); toggleFavorite("quizzes", quiz.examId); rerender((n) => n + 1); }}
+                          className="p-1.5 rounded-lg hover:bg-red-50 transition-colors"
+                          title={isFavorite("quizzes", quiz.examId) ? "Remove from favorites" : "Add to favorites"}
+                        >
+                          <Heart size={16} className={isFavorite("quizzes", quiz.examId) ? "fill-red-500 text-red-500" : "text-gray-300"} />
+                        </button>
+                        <Link href={`/quiz/${quiz.examId}`}>
                           <div className="w-9 h-9 rounded-xl bg-blue-50 group-hover:bg-blue-600 flex items-center justify-center transition-colors">
                             <ChevronRight size={18} className="text-blue-600 group-hover:text-white transition-colors" />
                           </div>
-                        </div>
+                        </Link>
                       </div>
                     </div>
-                  </Link>
+                  </div>
                 </motion.div>
               ))}
             </div>

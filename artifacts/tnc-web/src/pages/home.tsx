@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Link } from "wouter";
 import { useGetSliders, useGetCourses, useGetPromoStatus } from "@workspace/api-client-react";
-import { BookOpen, Video, FileText, Award, ChevronLeft, ChevronRight, ArrowRight, CheckCircle, Star } from "lucide-react";
+import { BookOpen, Video, FileText, Award, ChevronLeft, ChevronRight, ArrowRight, CheckCircle, Star, Flame } from "lucide-react";
 import { motion } from "framer-motion";
 import Layout from "@/components/Layout";
+import { getStreak } from "@/lib/auth";
 
 function SliderCarousel() {
   const { data: sliders, isLoading } = useGetSliders();
@@ -23,17 +24,10 @@ function SliderCarousel() {
   useEffect(() => {
     if (items.length <= 1) return;
     timerRef.current = setInterval(next, 4000);
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [items.length, next]);
 
-  if (isLoading) {
-    return (
-      <div className="w-full h-52 md:h-80 skeleton rounded-none" />
-    );
-  }
-
+  if (isLoading) return <div className="w-full h-52 md:h-80 skeleton rounded-none" />;
   if (!items.length) return null;
 
   return (
@@ -47,6 +41,7 @@ function SliderCarousel() {
           <img
             src={slide.imageUrl}
             alt={slide.name}
+            loading={i === 0 ? "eager" : "lazy"}
             className="w-full h-full object-cover"
             onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
           />
@@ -56,31 +51,17 @@ function SliderCarousel() {
           </div>
         </div>
       ))}
-
       {items.length > 1 && (
         <>
-          <button
-            onClick={prev}
-            className="absolute left-3 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white p-2 rounded-full transition-colors"
-            data-testid="slider-prev"
-          >
+          <button onClick={prev} className="absolute left-3 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white p-2 rounded-full transition-colors" data-testid="slider-prev">
             <ChevronLeft size={18} />
           </button>
-          <button
-            onClick={next}
-            className="absolute right-3 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white p-2 rounded-full transition-colors"
-            data-testid="slider-next"
-          >
+          <button onClick={next} className="absolute right-3 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white p-2 rounded-full transition-colors" data-testid="slider-next">
             <ChevronRight size={18} />
           </button>
           <div className="absolute bottom-3 right-4 flex gap-1.5">
             {items.map((_, i) => (
-              <button
-                key={i}
-                onClick={() => setCurrent(i)}
-                className={`w-2 h-2 rounded-full transition-all ${i === current ? "bg-white w-5" : "bg-white/50"}`}
-                data-testid={`slider-dot-${i}`}
-              />
+              <button key={i} onClick={() => setCurrent(i)} className={`w-2 h-2 rounded-full transition-all ${i === current ? "bg-white w-5" : "bg-white/50"}`} data-testid={`slider-dot-${i}`} />
             ))}
           </div>
         </>
@@ -96,9 +77,42 @@ function PromoBar() {
     <div className="tnc-amber-gradient text-white text-center py-2.5 px-4 text-sm font-semibold tracking-wide" data-testid="promo-bar">
       All content unlocked — Promotional mode active!
       {promo.expiresAt && (
-        <span className="ml-2 text-xs font-normal opacity-90">
-          (Expires {new Date(promo.expiresAt).toLocaleDateString("en-IN")})
-        </span>
+        <span className="ml-2 text-xs font-normal opacity-90">(Expires {new Date(promo.expiresAt).toLocaleDateString("en-IN")})</span>
+      )}
+    </div>
+  );
+}
+
+function StreakWidget() {
+  const [streakData, setStreakData] = useState(() => getStreak());
+
+  useEffect(() => {
+    setStreakData(getStreak());
+  }, []);
+
+  if (streakData.streak === 0) return null;
+
+  const today = new Date().toISOString().split("T")[0];
+  const isActiveToday = streakData.lastActive === today;
+
+  return (
+    <div className="bg-orange-50 border border-orange-100 rounded-2xl p-4 flex items-center gap-4" data-testid="streak-widget">
+      <div className={`w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0 ${isActiveToday ? "bg-orange-500" : "bg-orange-200"}`}>
+        <Flame size={28} className="text-white" strokeWidth={2.5} />
+      </div>
+      <div className="flex-1">
+        <div className="flex items-baseline gap-2">
+          <span className="text-3xl font-black text-orange-600">{streakData.streak}</span>
+          <span className="text-sm font-bold text-orange-500">day{streakData.streak !== 1 ? "s" : ""} streak</span>
+        </div>
+        <p className="text-xs text-orange-400 mt-0.5">
+          {isActiveToday ? "You've studied today! Keep it up." : "Watch a video or take a quiz to keep your streak alive."}
+        </p>
+      </div>
+      {!isActiveToday && (
+        <Link href="/videos" className="px-3 py-1.5 rounded-lg bg-orange-500 text-white text-xs font-semibold hover:bg-orange-600 transition-colors shrink-0">
+          Study now
+        </Link>
       )}
     </div>
   );
@@ -117,6 +131,7 @@ function CourseCard({ course }: { course: { id: number; rowId: string; name: str
           <img
             src={course.imageUrl}
             alt={course.name}
+            loading="lazy"
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
           />
@@ -133,18 +148,10 @@ function CourseCard({ course }: { course: { id: number; rowId: string; name: str
           <p className="text-xs text-gray-500 line-clamp-2 mb-3">{course.description}</p>
         )}
         <div className="flex gap-2 mt-3">
-          <Link
-            href={`/courses/${course.rowId}`}
-            className="flex-1 text-center py-2 px-3 rounded-lg text-xs font-semibold text-white tnc-brand-gradient hover:opacity-90 transition-opacity"
-            data-testid={`btn-view-course-${course.rowId}`}
-          >
+          <Link href={`/courses/${course.rowId}`} className="flex-1 text-center py-2 px-3 rounded-lg text-xs font-semibold text-white tnc-brand-gradient hover:opacity-90 transition-opacity" data-testid={`btn-view-course-${course.rowId}`}>
             View Course
           </Link>
-          <Link
-            href={`/buy`}
-            className="flex-1 text-center py-2 px-3 rounded-lg text-xs font-semibold border border-blue-600 text-blue-600 hover:bg-blue-50 transition-colors"
-            data-testid={`btn-enroll-course-${course.rowId}`}
-          >
+          <Link href="/buy" className="flex-1 text-center py-2 px-3 rounded-lg text-xs font-semibold border border-blue-600 text-blue-600 hover:bg-blue-50 transition-colors" data-testid={`btn-enroll-course-${course.rowId}`}>
             Enroll
           </Link>
         </div>
@@ -173,11 +180,7 @@ export default function HomePage() {
       {/* Hero CTA */}
       <section className="tnc-hero-gradient text-white py-12 px-4">
         <div className="max-w-4xl mx-auto text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-          >
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
             <div className="inline-block px-3 py-1 rounded-full bg-white/20 text-xs font-semibold mb-4 tracking-wide uppercase">
               India's Premier Nursing Exam Prep
             </div>
@@ -189,23 +192,20 @@ export default function HomePage() {
               Join thousands of nursing students who cleared government nursing exams with TNC's structured video lectures, e-notes, and expert guidance.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Link
-                href="/courses"
-                className="flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl bg-white text-blue-700 font-bold text-sm hover:bg-blue-50 transition-colors shadow-lg"
-                data-testid="hero-btn-courses"
-              >
+              <Link href="/courses" className="flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl bg-white text-blue-700 font-bold text-sm hover:bg-blue-50 transition-colors shadow-lg" data-testid="hero-btn-courses">
                 Explore Courses <ArrowRight size={16} />
               </Link>
-              <Link
-                href="/register"
-                className="flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl bg-yellow-400 text-gray-900 font-bold text-sm hover:bg-yellow-300 transition-colors shadow-lg"
-                data-testid="hero-btn-register"
-              >
+              <Link href="/register" className="flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl bg-yellow-400 text-gray-900 font-bold text-sm hover:bg-yellow-300 transition-colors shadow-lg" data-testid="hero-btn-register">
                 Join Free Now <ArrowRight size={16} />
               </Link>
             </div>
           </motion.div>
         </div>
+      </section>
+
+      {/* Streak widget */}
+      <section className="max-w-5xl mx-auto px-4 pt-6">
+        <StreakWidget />
       </section>
 
       {/* Stats */}
@@ -234,12 +234,7 @@ export default function HomePage() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {features.map(({ icon: Icon, title, desc }) => (
-              <motion.div
-                key={title}
-                whileHover={{ y: -4 }}
-                className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 text-center"
-                data-testid={`feature-${title.replace(/ /g, "-").toLowerCase()}`}
-              >
+              <motion.div key={title} whileHover={{ y: -4 }} className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 text-center" data-testid={`feature-${title.replace(/ /g, "-").toLowerCase()}`}>
                 <div className="w-12 h-12 rounded-xl tnc-brand-gradient flex items-center justify-center mx-auto mb-3">
                   <Icon size={22} className="text-white" />
                 </div>
@@ -259,11 +254,7 @@ export default function HomePage() {
               <h2 className="text-2xl font-black text-gray-900">Our Courses</h2>
               <p className="text-sm text-gray-500 mt-1">Structured batches for every nursing exam</p>
             </div>
-            <Link
-              href="/courses"
-              className="flex items-center gap-1 text-sm font-semibold text-blue-600 hover:text-blue-700"
-              data-testid="link-all-courses"
-            >
+            <Link href="/courses" className="flex items-center gap-1 text-sm font-semibold text-blue-600 hover:text-blue-700" data-testid="link-all-courses">
               View All <ArrowRight size={14} />
             </Link>
           </div>
@@ -298,11 +289,7 @@ export default function HomePage() {
           <p className="text-white/70 text-sm mb-8">Comprehensive preparation for all major nursing recruitment exams</p>
           <div className="flex flex-wrap justify-center gap-3">
             {exams.map((exam) => (
-              <div
-                key={exam}
-                className="px-4 py-2 rounded-full bg-white/15 border border-white/20 text-sm font-semibold backdrop-blur-sm"
-                data-testid={`badge-exam-${exam.replace(/ /g, "-").toLowerCase()}`}
-              >
+              <div key={exam} className="px-4 py-2 rounded-full bg-white/15 border border-white/20 text-sm font-semibold backdrop-blur-sm" data-testid={`badge-exam-${exam.replace(/ /g, "-").toLowerCase()}`}>
                 {exam}
               </div>
             ))}
@@ -354,10 +341,9 @@ export default function HomePage() {
                   { path: "/enotes", label: "E-Notes" },
                   { path: "/courses", label: "Courses" },
                   { path: "/buy", label: "Buy Courses" },
+                  { path: "/favorites", label: "My Favorites" },
                 ].map(({ path, label }) => (
-                  <Link key={path} href={path} className="block text-white/70 hover:text-white text-sm transition-colors">
-                    {label}
-                  </Link>
+                  <Link key={path} href={path} className="block text-white/70 hover:text-white text-sm transition-colors">{label}</Link>
                 ))}
               </div>
             </div>

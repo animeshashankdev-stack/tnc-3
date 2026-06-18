@@ -32573,6 +32573,7 @@ var health_default = router;
 
 // src/routes/proxy.ts
 var import_express2 = __toESM(require_express2(), 1);
+import { Readable } from "stream";
 
 // src/lib/logger.ts
 var import_pino = __toESM(require_pino(), 1);
@@ -32595,13 +32596,25 @@ var logger = (0, import_pino.default)({
 // src/routes/proxy.ts
 var router2 = (0, import_express2.Router)();
 var CRM_BASE = "https://crm.tncnursing.in";
-var ADMIN_PASSWORD = "newtncsite";
-var ADMIN_TOKEN = "admin_tnc_2024_secure_token";
+var ADMIN_PASSWORD = process.env.ADMIN_PASSWORD ?? "newtncsite";
+var ADMIN_TOKEN = process.env.ADMIN_TOKEN ?? "admin_tnc_2024_secure_token";
+var FIREBASE_BUCKET = process.env.FIREBASE_BUCKET ?? "shivangi-nursing-academy-818e5.appspot.com";
 var PROMO_EXPIRES_DAYS = 30;
 var promoState = {
   enabled: true,
   expiresAt: new Date(Date.now() + PROMO_EXPIRES_DAYS * 24 * 60 * 60 * 1e3).toISOString()
 };
+var userCache = null;
+var USER_CACHE_TTL = 5 * 60 * 1e3;
+async function getAllUsers() {
+  if (userCache && Date.now() - userCache.fetchedAt < USER_CACHE_TTL) {
+    return userCache.data;
+  }
+  const data = await crmQuery({ fn: "common_fn", se: "fe", sch: "t_us", data: { json: "*" }, cond: {} });
+  const users = Array.isArray(data) ? data : [];
+  userCache = { data: users, fetchedAt: Date.now() };
+  return users;
+}
 async function crmQuery(payload) {
   const resp = await fetch(`${CRM_BASE}/common/`, {
     method: "POST",
@@ -32615,6 +32628,20 @@ function buildMediaUrl(path) {
   if (!path) return null;
   if (path.startsWith("http")) return path;
   return `${CRM_BASE}/${path.replace(/^\//, "")}`;
+}
+function buildFirebaseUrl(firebaseId) {
+  if (firebaseId.startsWith("https://")) return firebaseId;
+  if (firebaseId.startsWith("gs://")) {
+    const withoutGs = firebaseId.replace("gs://", "");
+    const slashIdx = withoutGs.indexOf("/");
+    if (slashIdx > 0) {
+      const filePath = withoutGs.slice(slashIdx + 1);
+      const encoded2 = filePath.split("/").map(encodeURIComponent).join("%2F");
+      return `https://firebasestorage.googleapis.com/v0/b/${withoutGs.slice(0, slashIdx)}/o/${encoded2}?alt=media`;
+    }
+  }
+  const encoded = firebaseId.split("/").map(encodeURIComponent).join("%2F");
+  return `https://firebasestorage.googleapis.com/v0/b/${FIREBASE_BUCKET}/o/${encoded}?alt=media`;
 }
 function parseCourse(row) {
   const json = row.json ?? {};
@@ -32653,10 +32680,13 @@ function parseChapter(row) {
   const pdfUrl = isCrmHostedPdf ? `/api/pdf?path=${encodeURIComponent(rawPdfPath)}` : null;
   const hasFirebasePdf = !isCrmHostedPdf && rawPdfPath.length > 0;
   let contentType;
+  let finalVideoUrl = videoUrl;
   if (videoUrl) {
     contentType = "youtube";
   } else if (hasFirebase || hasFirebasePdf) {
     contentType = "firebase";
+    const fbId = firebaseId.trim() || rawPdfPath;
+    finalVideoUrl = `/api/firebase-video?id=${encodeURIComponent(fbId)}`;
   } else if (pdfUrl) {
     contentType = "pdf";
   } else {
@@ -32667,10 +32697,10 @@ function parseChapter(row) {
     rowId: row.row_id,
     title: json._na ?? "Untitled",
     description: "",
-    videoUrl,
+    videoUrl: finalVideoUrl,
     pdfUrl,
     contentType,
-    type: contentType === "youtube" ? "video" : contentType === "pdf" ? "pdf" : "content",
+    type: contentType === "youtube" || contentType === "firebase" ? "video" : contentType === "pdf" ? "pdf" : "content",
     courseId: row.co_refid ?? json._co,
     subjectId: row.su_refid ?? json._su,
     isPaid: json._pr_ty === 1,
@@ -32751,6 +32781,11 @@ function parseQuestion(row) {
     questionNo: json._qno ?? null
   };
 }
+router2.get("/config", (_req, res) => {
+  res.json({
+    razorpayKey: process.env.RAZORPAY_KEY ?? ""
+  });
+});
 router2.get("/courses", async (_req, res) => {
   try {
     const data = await crmQuery({
@@ -32762,9 +32797,9 @@ router2.get("/courses", async (_req, res) => {
     });
     const courses = Array.isArray(data) ? data.map(parseCourse) : [];
     courses.sort((a, b) => {
-      const aNo = parseFloat(String(a.serialNo)) || 0;
-      const bNo = parseFloat(String(b.serialNo)) || 0;
-      return aNo - bNo;
+      const aTime = String(a.createdAt ?? "");
+      const bTime = String(b.createdAt ?? "");
+      return bTime.localeCompare(aTime);
     });
     res.json(courses);
   } catch (err) {
@@ -32790,11 +32825,54 @@ router2.get("/pdf", async (req, res) => {
     res.setHeader("Content-Disposition", "inline");
     res.setHeader("Cache-Control", "public, max-age=86400");
     res.setHeader("Access-Control-Allow-Origin", "*");
-    const buf = await upstream.arrayBuffer();
-    res.end(Buffer.from(buf));
+    if (upstream.body) {
+      const nodeStream = Readable.fromWeb(upstream.body);
+      nodeStream.pipe(res);
+    } else {
+      const buf = await upstream.arrayBuffer();
+      res.end(Buffer.from(buf));
+    }
   } catch (err) {
     logger.error({ err }, "Failed to proxy PDF");
     res.status(500).json({ error: "Failed to load PDF" });
+  }
+});
+router2.get("/firebase-video", async (req, res) => {
+  try {
+    const { id: firebaseId } = req.query;
+    if (!firebaseId || typeof firebaseId !== "string") {
+      res.status(400).json({ error: "Missing id" });
+      return;
+    }
+    const firebaseUrl = buildFirebaseUrl(firebaseId.trim());
+    logger.info({ firebaseUrl }, "Proxying Firebase video");
+    const headers = {};
+    if (req.headers.range) headers["Range"] = req.headers.range;
+    const upstream = await fetch(firebaseUrl, { headers });
+    if (!upstream.ok && upstream.status !== 206) {
+      logger.warn({ status: upstream.status, url: firebaseUrl }, "Firebase video not accessible");
+      res.status(upstream.status).json({ error: `Firebase storage returned ${upstream.status}` });
+      return;
+    }
+    const ct = upstream.headers.get("content-type") ?? "video/mp4";
+    const cl = upstream.headers.get("content-length");
+    const cr = upstream.headers.get("content-range");
+    res.setHeader("Content-Type", ct);
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Accept-Ranges", "bytes");
+    res.setHeader("Cache-Control", "public, max-age=3600");
+    if (cl) res.setHeader("Content-Length", cl);
+    if (cr) res.setHeader("Content-Range", cr);
+    res.status(upstream.status);
+    if (upstream.body) {
+      const nodeStream = Readable.fromWeb(upstream.body);
+      nodeStream.pipe(res);
+    } else {
+      res.end();
+    }
+  } catch (err) {
+    logger.error({ err }, "Firebase video proxy failed");
+    res.status(500).json({ error: "Failed to fetch video" });
   }
 });
 router2.get("/sessions", async (req, res) => {
@@ -32815,7 +32893,7 @@ router2.get("/sessions", async (req, res) => {
     }
     let sessions = data.map(parseChapter);
     if (type === "video") {
-      sessions = sessions.filter((s) => s.contentType === "youtube" || s.videoUrl);
+      sessions = sessions.filter((s) => s.contentType === "youtube" || s.contentType === "firebase" || s.videoUrl);
     } else if (type === "pdf") {
       sessions = sessions.filter((s) => s.contentType === "pdf" || s.pdfUrl);
     }
@@ -33029,24 +33107,20 @@ router2.post("/admin/login", (req, res) => {
 });
 router2.get("/admin/stats", async (_req, res) => {
   try {
-    const [coursesData, usersData, purchasesData] = await Promise.all([
+    const [coursesData, purchasesData] = await Promise.all([
       crmQuery({ fn: "common_fn", se: "fe", sch: "t_co", data: { json: "*" }, cond: {} }),
-      crmQuery({ fn: "common_fn", se: "fe", sch: "t_us", data: { json: "*" }, cond: {} }),
       crmQuery({ fn: "common_fn", se: "fe", sch: "t_cu", data: { json: "*" }, cond: {} })
     ]);
+    const users = await getAllUsers();
     const courses = Array.isArray(coursesData) ? coursesData : [];
-    const users = Array.isArray(usersData) ? usersData : [];
     const purchases = Array.isArray(purchasesData) ? purchasesData : [];
-    const sortedUsers = [...users].sort((a, b) => {
-      const aTime = String(a.cr_on ?? "");
-      const bTime = String(b.cr_on ?? "");
-      return bTime.localeCompare(aTime);
-    });
+    const sortedUsers = [...users].sort(
+      (a, b) => String(b.cr_on ?? "").localeCompare(String(a.cr_on ?? ""))
+    );
     res.json({
       totalUsers: users.length,
       totalCourses: courses.length,
-      totalSessions: 59806,
-      // Known count from t_ch — too large to fetch dynamically
+      totalSessions: "59,806+",
       totalPurchases: purchases.length,
       recentUsers: sortedUsers.slice(0, 15).map(parseAdminUser)
     });
@@ -33060,14 +33134,7 @@ router2.get("/admin/users", async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 20;
     const search = req.query.search ?? "";
-    const data = await crmQuery({
-      fn: "common_fn",
-      se: "fe",
-      sch: "t_us",
-      data: { json: "*" },
-      cond: {}
-    });
-    let users = Array.isArray(data) ? data : [];
+    let users = await getAllUsers();
     if (search) {
       const q = search.toLowerCase();
       users = users.filter((row) => {
@@ -33184,12 +33251,10 @@ router2.get("/quiz/:examId", async (req, res) => {
     }
     const exam = data[0];
     const quRefids = exam.qu_refid ?? [];
-    const MAX_QUESTIONS = 200;
     const BATCH_SIZE = 50;
-    const questionIds = quRefids.slice(0, MAX_QUESTIONS);
     const batches = [];
-    for (let i = 0; i < questionIds.length; i += BATCH_SIZE) {
-      batches.push(questionIds.slice(i, i + BATCH_SIZE));
+    for (let i = 0; i < quRefids.length; i += BATCH_SIZE) {
+      batches.push(quRefids.slice(i, i + BATCH_SIZE));
     }
     const batchResults = await Promise.all(
       batches.map(
@@ -33210,6 +33275,7 @@ router2.get("/quiz/:examId", async (req, res) => {
       const val = r.value;
       return Array.isArray(val) ? val : [];
     }).map(parseQuestion).filter((q) => q.questionText.trim() !== "");
+    questions.sort((a, b) => (a.questionNo ?? 0) - (b.questionNo ?? 0));
     res.json({ ...parseExam(exam), questions });
   } catch (err) {
     logger.error({ err }, "Failed to fetch quiz");

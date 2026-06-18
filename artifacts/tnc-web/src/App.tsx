@@ -16,6 +16,7 @@ import WatchPage from "@/pages/watch";
 import PdfViewerPage from "@/pages/pdf-viewer";
 import QuizPage from "@/pages/quiz";
 import QuizTakePage from "@/pages/quiz-take";
+import FavoritesPage from "@/pages/favorites";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient({
@@ -43,6 +44,7 @@ function Router() {
       <Route path="/admin" component={AdminPage} />
       <Route path="/watch/:sessionId" component={WatchPage} />
       <Route path="/pdf/:sessionId" component={PdfViewerPage} />
+      <Route path="/favorites" component={FavoritesPage} />
       <Route component={NotFound} />
     </Switch>
   );

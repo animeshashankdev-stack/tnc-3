@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { useGetCourses, useGetPromoStatus, useGetUserPurchases, useCreatePurchase, getGetUserPurchasesQueryKey, getGetCoursesQueryKey } from "@workspace/api-client-react";
 import { ShoppingCart, CheckCircle, Lock, ArrowRight, Sparkles } from "lucide-react";
 import { Link, useLocation } from "wouter";
@@ -6,8 +7,6 @@ import { getUser } from "@/lib/auth";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
-
-const RAZORPAY_KEY = "rzp_live_in5lCZ8NOaheGp";
 
 function loadRazorpay(): Promise<boolean> {
   return new Promise((resolve) => {
@@ -23,15 +22,13 @@ function loadRazorpay(): Promise<boolean> {
   });
 }
 
-const COURSE_PRICES: Record<string, number> = {};
-
 function getPriceForCourse(courseId: string, courseName: string): number {
-  if (COURSE_PRICES[courseId]) return COURSE_PRICES[courseId];
   const name = courseName.toLowerCase();
   if (name.includes("live") || name.includes("batch")) return 2999;
   if (name.includes("series") || name.includes("daily")) return 1499;
   if (name.includes("complete") || name.includes("full")) return 3999;
   return 1999;
+  void courseId;
 }
 
 export default function BuyPage() {
@@ -39,6 +36,14 @@ export default function BuyPage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [razorpayKey, setRazorpayKey] = useState<string>("");
+
+  useEffect(() => {
+    fetch("/api/config")
+      .then((r) => r.json())
+      .then((cfg) => { if (cfg?.razorpayKey) setRazorpayKey(cfg.razorpayKey as string); })
+      .catch(() => {});
+  }, []);
 
   const { data: courses, isLoading } = useGetCourses();
   const { data: promo } = useGetPromoStatus();
@@ -47,13 +52,17 @@ export default function BuyPage() {
   });
 
   const createPurchase = useCreatePurchase();
-
   const purchasedIds = new Set((purchases ?? []).map((p) => p.courseId));
 
   async function handleBuy(courseRowId: string, courseName: string) {
     if (!user) {
       toast({ title: "Login required", description: "Please login to purchase a course", variant: "destructive" });
       setLocation("/login");
+      return;
+    }
+
+    if (!razorpayKey) {
+      toast({ title: "Payment not ready", description: "Payment gateway is loading. Please try again.", variant: "destructive" });
       return;
     }
 
@@ -66,8 +75,8 @@ export default function BuyPage() {
     }
 
     const options = {
-      key: RAZORPAY_KEY,
-      amount: price * 100, // paise
+      key: razorpayKey,
+      amount: price * 100,
       currency: "INR",
       name: "TNC Nursing Classes",
       description: courseName,
@@ -85,6 +94,7 @@ export default function BuyPage() {
           {
             onSuccess: () => {
               queryClient.invalidateQueries({ queryKey: getGetUserPurchasesQueryKey(user.userId) });
+              queryClient.invalidateQueries({ queryKey: getGetCoursesQueryKey() });
               toast({ title: "Purchase successful!", description: `You now have access to ${courseName}` });
             },
             onError: () => {
@@ -108,7 +118,6 @@ export default function BuyPage() {
 
   return (
     <Layout>
-      {/* Header */}
       <div className="tnc-brand-gradient text-white py-10 px-4">
         <div className="max-w-5xl mx-auto">
           <h1 className="text-2xl md:text-3xl font-black mb-1">Buy Courses</h1>
@@ -116,7 +125,6 @@ export default function BuyPage() {
         </div>
       </div>
 
-      {/* Promo banner */}
       {promo?.enabled && (
         <div className="tnc-amber-gradient text-white px-4 py-4">
           <div className="max-w-5xl mx-auto flex items-center gap-3">
@@ -132,7 +140,6 @@ export default function BuyPage() {
       )}
 
       <div className="max-w-5xl mx-auto px-4 py-8">
-        {/* Login prompt */}
         {!user && (
           <div className="bg-blue-50 border border-blue-200 rounded-2xl p-5 mb-6 flex items-center justify-between flex-wrap gap-4">
             <div>
@@ -161,7 +168,7 @@ export default function BuyPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {(courses ?? []).map((course, i) => {
+            {(Array.isArray(courses) ? courses : []).map((course, i) => {
               const alreadyPurchased = purchasedIds.has(course.rowId);
               const price = getPriceForCourse(course.rowId, course.name);
 
@@ -170,7 +177,7 @@ export default function BuyPage() {
                   key={course.rowId}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.06 }}
+                  transition={{ delay: Math.min(i * 0.06, 0.6) }}
                   className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 flex flex-col group hover:shadow-lg transition-shadow"
                   data-testid={`card-buy-${course.rowId}`}
                 >
@@ -179,6 +186,7 @@ export default function BuyPage() {
                       <img
                         src={course.imageUrl}
                         alt={course.name}
+                        loading="lazy"
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                         onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
                       />
@@ -187,7 +195,6 @@ export default function BuyPage() {
                         <ShoppingCart size={40} className="text-blue-200" />
                       </div>
                     )}
-
                     {alreadyPurchased && (
                       <div className="absolute top-3 right-3 flex items-center gap-1 px-2 py-1 rounded-full bg-green-500 text-white text-xs font-semibold">
                         <CheckCircle size={11} /> Purchased
@@ -242,7 +249,6 @@ export default function BuyPage() {
           </div>
         )}
 
-        {/* Trust signals */}
         <div className="mt-12 grid grid-cols-1 sm:grid-cols-3 gap-5">
           {[
             { title: "Secure Payments", desc: "Powered by Razorpay with 100% payment security" },

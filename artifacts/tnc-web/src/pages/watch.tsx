@@ -1,14 +1,14 @@
 import { useParams, Link } from "wouter";
 import { useEffect, useRef, useState } from "react";
 import { useGetSession, useGetPromoStatus, useGetUserPurchases, getGetUserPurchasesQueryKey, useListSessions, getListSessionsQueryKey } from "@workspace/api-client-react";
-import { ArrowLeft, Lock, Video, Smartphone, FileText, AlertCircle, ChevronRight, PlayCircle } from "lucide-react";
+import { ArrowLeft, Lock, Video, FileText, AlertCircle, ChevronRight, PlayCircle, Heart, WifiOff } from "lucide-react";
 import Layout from "@/components/Layout";
-import { getUser } from "@/lib/auth";
-
-const CRM_BASE = "https://crm.tncnursing.in";
+import { getUser, logActivity, isFavorite, toggleFavorite } from "@/lib/auth";
 
 function HlsPlayer({ src }: { src: string }) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const { sessionId } = useParams<{ sessionId: string }>();
+  const [hasLogged, setHasLogged] = useState(false);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -31,24 +31,46 @@ function HlsPlayer({ src }: { src: string }) {
     return () => cleanup?.();
   }, [src]);
 
+  function handleTimeUpdate() {
+    const video = videoRef.current;
+    if (!hasLogged && video && video.currentTime > 10) {
+      setHasLogged(true);
+      logActivity("video", sessionId ?? src);
+    }
+  }
+
   return (
-    <video ref={videoRef} controls className="w-full max-h-[70vh] bg-black rounded-xl" data-testid="video-player">
+    <video
+      ref={videoRef}
+      controls
+      className="w-full max-h-[70vh] bg-black rounded-xl"
+      onTimeUpdate={handleTimeUpdate}
+      data-testid="video-player"
+    >
       Your browser does not support video playback.
     </video>
   );
 }
 
-function YouTubeEmbed({ url }: { url: string }) {
-  // Extract video ID from various YouTube URL formats
+function YouTubeEmbed({ url, sessionId }: { url: string; sessionId: string }) {
   const videoId = url.match(/(?:v=|youtu\.be\/|embed\/)([a-zA-Z0-9_-]{11})/)?.[1];
+  const [started, setStarted] = useState(false);
+
+  useEffect(() => {
+    if (!started) return;
+    const timer = setTimeout(() => logActivity("video", sessionId), 15_000);
+    return () => clearTimeout(timer);
+  }, [started, sessionId]);
+
   if (!videoId) return <div className="h-40 flex items-center justify-center text-white/50 text-sm">Could not extract video ID from URL</div>;
   return (
     <div className="relative w-full" style={{ paddingTop: "56.25%" }}>
       <iframe
-        src={`https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1&autoplay=0`}
+        src={`https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1&autoplay=0&enablejsapi=1`}
         className="absolute inset-0 w-full h-full rounded-xl"
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
         allowFullScreen
+        onLoad={() => setStarted(true)}
         data-testid="youtube-embed"
         title="Video lecture"
       />
@@ -86,26 +108,46 @@ function PdfViewer({ url, title }: { url: string; title: string }) {
   );
 }
 
-function FirebaseOnlyCard({ title }: { title: string }) {
+function FirebasePlayer({ src, title }: { src: string; title: string }) {
+  const [status, setStatus] = useState<"loading" | "playing" | "error">("loading");
+  const { sessionId } = useParams<{ sessionId: string }>();
+
   return (
-    <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl border border-blue-100 p-8 text-center">
-      <div className="w-16 h-16 rounded-2xl bg-blue-100 flex items-center justify-center mx-auto mb-4">
-        <Smartphone size={32} className="text-blue-600" />
-      </div>
-      <h2 className="text-base font-bold text-gray-800 mb-2">{title}</h2>
-      <p className="text-sm text-gray-500 mb-4 max-w-xs mx-auto">
-        This lecture video is available exclusively in the <strong>TNC Nursing Classes</strong> mobile app (Firebase-secured stream).
-      </p>
-      <div className="flex flex-col sm:flex-row gap-2 justify-center">
-        <a
-          href="https://play.google.com/store/apps/details?id=in.tncnursing.app"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl tnc-brand-gradient text-white text-sm font-semibold hover:opacity-90 transition-opacity"
+    <div className="bg-black rounded-2xl overflow-hidden shadow-2xl">
+      {status === "error" ? (
+        <div className="bg-gray-900 rounded-2xl p-10 text-center text-white">
+          <WifiOff size={40} className="mx-auto text-gray-400 mb-3" />
+          <p className="font-bold text-lg mb-1">{title}</p>
+          <p className="text-sm text-gray-400 mb-4">
+            This video is a secured stream and could not be loaded in the browser. Please use the mobile app.
+          </p>
+          <a
+            href="https://play.google.com/store/apps/details?id=in.tncnursing.app"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block px-5 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-semibold"
+          >
+            Open TNC App
+          </a>
+        </div>
+      ) : (
+        <video
+          src={src}
+          controls
+          autoPlay={false}
+          className="w-full max-h-[70vh] bg-black"
+          data-testid="firebase-video-player"
+          onLoadedData={() => setStatus("playing")}
+          onError={() => setStatus("error")}
+          onTimeUpdate={(e) => {
+            if ((e.target as HTMLVideoElement).currentTime > 10) {
+              logActivity("video", sessionId ?? src);
+            }
+          }}
         >
-          <Smartphone size={15} /> Download App
-        </a>
-      </div>
+          Your browser does not support video playback.
+        </video>
+      )}
     </div>
   );
 }
@@ -127,7 +169,9 @@ function CoursePlaylist({ courseId, currentSessionId }: { courseId: string; curr
     { query: { queryKey: getListSessionsQueryKey({ courseId }) } }
   );
 
-  const videoSessions = (sessions ?? []).filter((s) => s.contentType === "youtube" || s.videoUrl || s.contentType === "pdf");
+  const videoSessions = (sessions ?? []).filter(
+    (s) => s.contentType === "youtube" || s.contentType === "firebase" || s.videoUrl || s.contentType === "pdf"
+  );
   const displaySessions = showAll ? videoSessions : videoSessions.slice(0, 10);
 
   if (!videoSessions.length) return null;
@@ -141,15 +185,15 @@ function CoursePlaylist({ courseId, currentSessionId }: { courseId: string; curr
       <div className="divide-y divide-gray-50 max-h-80 overflow-y-auto">
         {displaySessions.map((s) => {
           const isCurrent = s.rowId === currentSessionId;
-          const isVideo = s.contentType === "youtube" || s.videoUrl;
+          const isPdf = s.contentType === "pdf" && !s.videoUrl;
           return (
             <Link
               key={s.rowId}
-              href={isVideo ? `/watch/${s.rowId}` : `/pdf/${s.rowId}`}
+              href={isPdf ? `/pdf/${s.rowId}` : `/watch/${s.rowId}`}
               className={`flex items-center gap-3 px-4 py-3 hover:bg-blue-50 transition-colors ${isCurrent ? "bg-blue-50 border-l-2 border-blue-600" : ""}`}
             >
               <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${isCurrent ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-400"}`}>
-                {isVideo ? <PlayCircle size={14} /> : <FileText size={13} />}
+                {isPdf ? <FileText size={13} /> : <PlayCircle size={14} />}
               </div>
               <p className={`text-xs font-medium truncate flex-1 ${isCurrent ? "text-blue-700" : "text-gray-700"}`}>{s.title}</p>
               {isCurrent && <div className="w-1.5 h-1.5 rounded-full bg-blue-600 flex-shrink-0" />}
@@ -172,6 +216,7 @@ function CoursePlaylist({ courseId, currentSessionId }: { courseId: string; curr
 export default function WatchPage() {
   const { sessionId } = useParams<{ sessionId: string }>();
   const user = getUser();
+  const [fav, setFav] = useState(() => isFavorite("sessions", sessionId ?? ""));
 
   const { data: session, isLoading } = useGetSession(sessionId ?? "");
   const { data: promo } = useGetPromoStatus();
@@ -181,8 +226,12 @@ export default function WatchPage() {
 
   const purchasedIds = new Set((purchases ?? []).map((p) => p.courseId));
   const isCourseUnlocked = promo?.enabled || (!!session?.courseId && purchasedIds.has(session.courseId));
-  // Free sessions (isPaid=false) are always accessible
   const isUnlocked = !session?.isPaid || isCourseUnlocked;
+
+  function handleToggleFav() {
+    const result = toggleFavorite("sessions", sessionId ?? "");
+    setFav(result);
+  }
 
   if (isLoading) {
     return (
@@ -223,7 +272,6 @@ export default function WatchPage() {
         </Link>
 
         <div className="flex flex-col lg:flex-row gap-5">
-          {/* Main content */}
           <div className="flex-1 min-w-0">
             {!isUnlocked ? (
               <div className="bg-gray-100 rounded-2xl p-12 text-center">
@@ -239,29 +287,38 @@ export default function WatchPage() {
                 {contentType === "youtube" && session.videoUrl ? (
                   <div className="bg-black rounded-2xl overflow-hidden shadow-2xl">
                     {session.videoUrl.includes("youtube.com") || session.videoUrl.includes("youtu.be") ? (
-                      <YouTubeEmbed url={session.videoUrl} />
+                      <YouTubeEmbed url={session.videoUrl} sessionId={sessionId ?? ""} />
                     ) : (
                       <HlsPlayer src={session.videoUrl} />
                     )}
                   </div>
                 ) : contentType === "pdf" && session.pdfUrl ? (
                   <PdfViewer url={session.pdfUrl} title={session.title} />
-                ) : contentType === "firebase" ? (
-                  <FirebaseOnlyCard title={session.title} />
+                ) : contentType === "firebase" && session.videoUrl ? (
+                  <FirebasePlayer src={session.videoUrl} title={session.title} />
                 ) : (
                   <NoContentCard title={session.title} />
                 )}
 
-                {/* Session info */}
                 {contentType !== "pdf" && (
                   <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
                     <div className="flex items-start justify-between gap-3">
                       <h1 className="text-lg font-black text-gray-900 leading-snug" data-testid="session-title">
                         {session.title}
                       </h1>
-                      {!session.isPaid && (
-                        <span className="bg-green-100 text-green-700 text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0">FREE</span>
-                      )}
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        {!session.isPaid && (
+                          <span className="bg-green-100 text-green-700 text-[10px] font-bold px-2 py-0.5 rounded-full">FREE</span>
+                        )}
+                        <button
+                          onClick={handleToggleFav}
+                          className={`p-2 rounded-full transition-colors ${fav ? "text-red-500 bg-red-50" : "text-gray-400 hover:text-red-400 hover:bg-red-50"}`}
+                          aria-label={fav ? "Remove from favorites" : "Add to favorites"}
+                          data-testid="btn-favorite-session"
+                        >
+                          <Heart size={18} fill={fav ? "currentColor" : "none"} />
+                        </button>
+                      </div>
                     </div>
                     {session.courseId && (
                       <Link href={`/courses/${session.courseId}`} className="text-xs text-blue-600 mt-2 inline-flex items-center gap-1 hover:underline">
@@ -274,7 +331,6 @@ export default function WatchPage() {
             )}
           </div>
 
-          {/* Sidebar playlist */}
           {session.courseId && (
             <div className="lg:w-72 flex-shrink-0">
               <CoursePlaylist courseId={session.courseId} currentSessionId={sessionId ?? ""} />

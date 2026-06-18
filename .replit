@@ -67,3 +67,12 @@ externalPort = 80
 [[ports]]
 localPort = 22705
 externalPort = 3000
+
+[userenv]
+
+[userenv.shared]
+ADMIN_PASSWORD = "newtncsite"
+ADMIN_TOKEN = "admin_tnc_2024_secure_token"
+RAZORPAY_KEY = "rzp_live_in5lCZ8NOaheGp"
+FIREBASE_BUCKET = "shivangi-nursing-academy-818e5.appspot.com"
+RAZORPAY_SECRET = "NuvPkd4nkPP6w9KAl42SUsvp"

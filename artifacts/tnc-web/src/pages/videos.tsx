@@ -1,14 +1,15 @@
 import { useState } from "react";
 import { Link } from "wouter";
 import { useGetCourses, useGetPromoStatus, useGetUserPurchases, getGetUserPurchasesQueryKey } from "@workspace/api-client-react";
-import { Video, Lock, PlayCircle, Search, BookOpen, ChevronRight, ArrowRight } from "lucide-react";
+import { Video, Lock, PlayCircle, Search, BookOpen, ChevronRight, ArrowRight, Heart } from "lucide-react";
 import Layout from "@/components/Layout";
-import { getUser } from "@/lib/auth";
+import { getUser, isFavorite, toggleFavorite } from "@/lib/auth";
 import { motion } from "framer-motion";
 
 export default function VideosPage() {
   const user = getUser();
   const [search, setSearch] = useState("");
+  const [, rerender] = useState(0);
 
   const { data: courses, isLoading } = useGetCourses();
   const { data: promo } = useGetPromoStatus();
@@ -22,7 +23,7 @@ export default function VideosPage() {
     return promo?.enabled || purchasedIds.has(courseRowId);
   }
 
-  const filtered = (courses ?? []).filter((c) =>
+  const filtered = (Array.isArray(courses) ? courses : []).filter((c) =>
     c.name.toLowerCase().includes(search.toLowerCase())
   );
 
@@ -117,7 +118,16 @@ export default function VideosPage() {
                       </div>
                     </div>
                     <div className="p-4 flex flex-col flex-1">
-                      <h3 className="font-bold text-gray-900 text-sm leading-snug mb-1 line-clamp-2">{course.name}</h3>
+                      <div className="flex items-start justify-between gap-2 mb-1">
+                        <h3 className="font-bold text-gray-900 text-sm leading-snug line-clamp-2">{course.name}</h3>
+                        <button
+                          onClick={() => { toggleFavorite("courses", course.rowId); rerender((n) => n + 1); }}
+                          className="p-1 rounded-lg hover:bg-red-50 transition-colors flex-shrink-0 mt-0.5"
+                          title={isFavorite("courses", course.rowId) ? "Remove from favorites" : "Add to favorites"}
+                        >
+                          <Heart size={15} className={isFavorite("courses", course.rowId) ? "fill-red-500 text-red-500" : "text-gray-300"} />
+                        </button>
+                      </div>
                       {course.description && course.description !== "Description" && (
                         <p className="text-xs text-gray-500 line-clamp-2 mb-2">{course.description}</p>
                       )}
