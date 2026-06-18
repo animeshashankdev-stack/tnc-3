@@ -273,7 +273,8 @@ export const ListQuizzesResponse = zod.object({
   "validUntil": zod.string().nullish(),
   "allowForPremium": zod.boolean(),
   "startDate": zod.string().nullish(),
-  "endDate": zod.string().nullish()
+  "endDate": zod.string().nullish(),
+  "createdAt": zod.string().nullish()
 })),
   "total": zod.number(),
   "page": zod.number(),
@@ -300,9 +301,11 @@ export const GetQuizResponse = zod.object({
   "allowForPremium": zod.boolean().optional(),
   "startDate": zod.string().nullish(),
   "endDate": zod.string().nullish(),
+  "createdAt": zod.string().nullish(),
   "questions": zod.array(zod.object({
   "rowId": zod.string(),
   "questionText": zod.string(),
+  "imageUrl": zod.string().nullish(),
   "optionA": zod.string(),
   "optionB": zod.string(),
   "optionC": zod.string(),

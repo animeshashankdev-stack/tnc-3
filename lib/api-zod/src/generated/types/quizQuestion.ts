@@ -9,6 +9,8 @@
 export interface QuizQuestion {
   rowId: string;
   questionText: string;
+  /** @nullable */
+  imageUrl?: string | null;
   optionA: string;
   optionB: string;
   optionC: string;

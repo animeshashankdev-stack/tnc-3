@@ -32528,7 +32528,8 @@ var ListQuizzesResponse = objectType({
     "validUntil": stringType().nullish(),
     "allowForPremium": booleanType(),
     "startDate": stringType().nullish(),
-    "endDate": stringType().nullish()
+    "endDate": stringType().nullish(),
+    "createdAt": stringType().nullish()
   })),
   "total": numberType(),
   "page": numberType(),
@@ -32549,9 +32550,11 @@ var GetQuizResponse = objectType({
   "allowForPremium": booleanType().optional(),
   "startDate": stringType().nullish(),
   "endDate": stringType().nullish(),
+  "createdAt": stringType().nullish(),
   "questions": arrayType(objectType({
     "rowId": stringType(),
     "questionText": stringType(),
+    "imageUrl": stringType().nullish(),
     "optionA": stringType(),
     "optionB": stringType(),
     "optionC": stringType(),
@@ -32760,7 +32763,8 @@ function parseExam(row) {
     validUntil: json._va_ti ?? null,
     allowForPremium: json._al_fo_pr === 1,
     startDate: json._st_da ?? null,
-    endDate: json._en_da ?? null
+    endDate: json._en_da ?? null,
+    createdAt: row.cr_on ?? null
   };
 }
 function parseQuestion(row) {
@@ -32768,10 +32772,13 @@ function parseQuestion(row) {
   const quObj = json._qu ?? {};
   const ops = json._op ?? {};
   const soObj = json._so ?? {};
+  const imObj = quObj._im ?? {};
+  const imgPath = imObj._li ?? null;
   return {
     rowId: row.row_id,
     questionId: row.id,
     questionText: quObj._qu ?? "",
+    imageUrl: imgPath ? buildMediaUrl(imgPath) : null,
     optionA: (ops._op_A ?? {})?._op_ti ?? "",
     optionB: (ops._op_B ?? {})?._op_ti ?? "",
     optionC: (ops._op_C ?? {})?._op_ti ?? "",

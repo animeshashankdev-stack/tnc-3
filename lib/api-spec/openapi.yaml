@@ -701,6 +701,8 @@ components:
           type: ["string", "null"]
         endDate:
           type: ["string", "null"]
+        createdAt:
+          type: ["string", "null"]
       required:
         - examId
         - examNo
@@ -737,6 +739,8 @@ components:
           type: string
         questionText:
           type: string
+        imageUrl:
+          type: ["string", "null"]
         optionA:
           type: string
         optionB:
@@ -786,6 +790,8 @@ components:
         startDate:
           type: ["string", "null"]
         endDate:
+          type: ["string", "null"]
+        createdAt:
           type: ["string", "null"]
         questions:
           type: array

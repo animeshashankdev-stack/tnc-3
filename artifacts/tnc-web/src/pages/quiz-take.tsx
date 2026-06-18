@@ -263,6 +263,15 @@ export default function QuizTakePage() {
                   <p className="text-xs text-gray-400 mb-2 font-medium">
                     Q{currentIdx + 1}{currentQ.questionNo ? ` (#${currentQ.questionNo})` : ""}
                   </p>
+                  {currentQ.imageUrl && (
+                    <img
+                      src={currentQ.imageUrl}
+                      alt="Question image"
+                      className="w-full max-h-64 object-contain rounded-xl mb-4 bg-gray-50 border border-gray-100"
+                      loading="lazy"
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                    />
+                  )}
                   <p className="text-base font-semibold text-gray-900 leading-relaxed mb-5">
                     {currentQ.questionText}
                   </p>
@@ -417,10 +426,21 @@ export default function QuizTakePage() {
                       <span className={`shrink-0 mt-0.5 ${isCorrect ? "text-green-500" : isWrong ? "text-red-500" : "text-gray-300"}`}>
                         {isCorrect ? <CheckCircle2 size={18} /> : isWrong ? <XCircle size={18} /> : <Circle size={18} />}
                       </span>
-                      <p className="text-sm font-semibold text-gray-900 leading-relaxed">
-                        <span className="text-gray-400 mr-1 font-normal">Q{i + 1}.</span>
-                        {q.questionText}
-                      </p>
+                      <div className="flex-1">
+                        {q.imageUrl && (
+                          <img
+                            src={q.imageUrl}
+                            alt="Question image"
+                            className="w-full max-h-48 object-contain rounded-xl mb-2 bg-gray-50 border border-gray-100"
+                            loading="lazy"
+                            onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                          />
+                        )}
+                        <p className="text-sm font-semibold text-gray-900 leading-relaxed">
+                          <span className="text-gray-400 mr-1 font-normal">Q{i + 1}.</span>
+                          {q.questionText}
+                        </p>
+                      </div>
                     </div>
 
                     <div className="pl-6 space-y-1.5 mb-3">

@@ -22,5 +22,7 @@ export interface Quiz {
   startDate?: string | null;
   /** @nullable */
   endDate?: string | null;
+  /** @nullable */
+  createdAt?: string | null;
   questions: QuizQuestion[];
 }

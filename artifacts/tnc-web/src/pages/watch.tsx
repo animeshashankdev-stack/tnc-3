@@ -113,40 +113,58 @@ function FirebasePlayer({ src, title }: { src: string; title: string }) {
   const { sessionId } = useParams<{ sessionId: string }>();
 
   return (
-    <div className="bg-black rounded-2xl overflow-hidden shadow-2xl">
+    <div className="rounded-2xl overflow-hidden shadow-2xl">
       {status === "error" ? (
-        <div className="bg-gray-900 rounded-2xl p-10 text-center text-white">
-          <WifiOff size={40} className="mx-auto text-gray-400 mb-3" />
-          <p className="font-bold text-lg mb-1">{title}</p>
-          <p className="text-sm text-gray-400 mb-4">
-            This video is a secured stream and could not be loaded in the browser. Please use the mobile app.
-          </p>
-          <a
-            href="https://play.google.com/store/apps/details?id=in.tncnursing.app"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-block px-5 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-semibold"
-          >
-            Open TNC App
-          </a>
+        <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl p-8 text-center text-white">
+          <div className="w-16 h-16 rounded-full bg-white/10 flex items-center justify-center mx-auto mb-4">
+            <WifiOff size={30} className="text-white/60" />
+          </div>
+          <p className="font-black text-lg mb-2 leading-snug">{title}</p>
+          <div className="bg-white/10 rounded-xl p-3 mb-5 text-left text-xs text-white/60 space-y-1.5">
+            <p>⚠️ This video is hosted on Firebase Storage and can only be streamed through the TNC mobile app.</p>
+            <p>Firebase Storage does not allow direct browser playback for this content.</p>
+          </div>
+          <p className="text-xs text-white/50 mb-4 font-medium uppercase tracking-wide">Watch on the TNC app</p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <a
+              href="https://play.google.com/store/apps/details?id=com.tncnursing"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-green-600 hover:bg-green-700 text-white text-sm font-semibold transition-colors"
+            >
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M3 20.5v-17c0-.83 1-.83 1.5-.5l15 8.5-15 8.5c-.5.33-1.5.33-1.5-.5z"/></svg>
+              Play Store
+            </a>
+            <a
+              href="https://apps.apple.com/in/app/team-nursing-classes-tnc/id6445818921"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition-colors"
+            >
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+              App Store
+            </a>
+          </div>
         </div>
       ) : (
-        <video
-          src={src}
-          controls
-          autoPlay={false}
-          className="w-full max-h-[70vh] bg-black"
-          data-testid="firebase-video-player"
-          onLoadedData={() => setStatus("playing")}
-          onError={() => setStatus("error")}
-          onTimeUpdate={(e) => {
-            if ((e.target as HTMLVideoElement).currentTime > 10) {
-              logActivity("video", sessionId ?? src);
-            }
-          }}
-        >
-          Your browser does not support video playback.
-        </video>
+        <div className="bg-black rounded-2xl overflow-hidden">
+          <video
+            src={src}
+            controls
+            autoPlay={false}
+            className="w-full max-h-[70vh] bg-black"
+            data-testid="firebase-video-player"
+            onLoadedData={() => setStatus("playing")}
+            onError={() => setStatus("error")}
+            onTimeUpdate={(e) => {
+              if ((e.target as HTMLVideoElement).currentTime > 10) {
+                logActivity("video", sessionId ?? src);
+              }
+            }}
+          >
+            Your browser does not support video playback.
+          </video>
+        </div>
       )}
     </div>
   );

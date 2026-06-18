@@ -184,6 +184,8 @@ export interface QuizMeta {
   startDate?: string | null;
   /** @nullable */
   endDate?: string | null;
+  /** @nullable */
+  createdAt?: string | null;
 }
 
 export interface QuizListResponse {
@@ -196,6 +198,8 @@ export interface QuizListResponse {
 export interface QuizQuestion {
   rowId: string;
   questionText: string;
+  /** @nullable */
+  imageUrl?: string | null;
   optionA: string;
   optionB: string;
   optionC: string;
@@ -223,6 +227,8 @@ export interface Quiz {
   startDate?: string | null;
   /** @nullable */
   endDate?: string | null;
+  /** @nullable */
+  createdAt?: string | null;
   questions: QuizQuestion[];
 }
 

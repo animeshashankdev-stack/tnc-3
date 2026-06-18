@@ -201,6 +201,7 @@ function parseExam(row: Record<string, unknown>) {
     allowForPremium: (json._al_fo_pr as number) === 1,
     startDate: (json._st_da as string) ?? null,
     endDate: (json._en_da as string) ?? null,
+    createdAt: (row.cr_on as string) ?? null,
   };
 }
 
@@ -209,11 +210,14 @@ function parseQuestion(row: Record<string, unknown>) {
   const quObj = (json._qu as Record<string, unknown>) ?? {};
   const ops = (json._op as Record<string, Record<string, unknown>>) ?? {};
   const soObj = (json._so as Record<string, unknown>) ?? {};
+  const imObj = (quObj._im as Record<string, unknown>) ?? {};
+  const imgPath = (imObj._li as string) ?? null;
 
   return {
     rowId: row.row_id as string,
     questionId: row.id as number,
     questionText: (quObj._qu ?? "") as string,
+    imageUrl: imgPath ? buildMediaUrl(imgPath) : null,
     optionA: ((ops._op_A ?? {})?._op_ti ?? "") as string,
     optionB: ((ops._op_B ?? {})?._op_ti ?? "") as string,
     optionC: ((ops._op_C ?? {})?._op_ti ?? "") as string,

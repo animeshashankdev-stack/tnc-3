@@ -13,6 +13,34 @@ function formatDuration(mins: string) {
   return `${n} min`;
 }
 
+const MONTH_NAMES = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const MONTH_FULL = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+
+function ordinal(n: number) {
+  const s = ["th","st","nd","rd"];
+  const v = n % 100;
+  return n + (s[(v - 20) % 10] || s[v] || s[0]);
+}
+
+function formatDateShort(iso: string | null | undefined) {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return null;
+  const dd = String(d.getDate()).padStart(2, "0");
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const yyyy = d.getFullYear();
+  return `${dd}-${mm}-${yyyy}`;
+}
+
+function formatDateLong(iso: string | null | undefined) {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return null;
+  return `${ordinal(d.getDate())} ${MONTH_FULL[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+void MONTH_NAMES;
+
 function getDifficultyColor(maxMarks: number) {
   if (maxMarks >= 100) return "bg-red-100 text-red-700";
   if (maxMarks >= 50) return "bg-amber-100 text-amber-700";
@@ -137,6 +165,17 @@ export default function QuizPage() {
                             {quiz.maxMarks} marks
                           </span>
                         </div>
+                        {(quiz.startDate || quiz.createdAt) && (() => {
+                          const ds = formatDateShort(quiz.startDate ?? quiz.createdAt);
+                          const dl = formatDateLong(quiz.startDate ?? quiz.createdAt);
+                          return ds ? (
+                            <p className="text-[11px] text-gray-400 mt-1.5">
+                              <span className="font-semibold text-blue-600">{ds}</span>
+                              <span className="mx-1 text-gray-300">·</span>
+                              <span>{dl}</span>
+                            </p>
+                          ) : null;
+                        })()}
                         {quiz.negativeMarks > 0 && (
                           <p className="text-[11px] text-red-500 mt-1">
                             −{quiz.negativeMarks} per wrong answer
