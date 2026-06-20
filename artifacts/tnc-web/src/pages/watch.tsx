@@ -108,9 +108,8 @@ function PdfViewer({ url, title }: { url: string; title: string }) {
   );
 }
 
-function FirebasePlayer({ src, title }: { src: string; title: string }) {
-  const [status, setStatus] = useState<"loading" | "playing" | "error">("loading");
-  const { sessionId } = useParams<{ sessionId: string }>();
+function FirebasePlayer({ src: _src, title }: { src: string; title: string }) {
+  const status = "error" as const;
 
   return (
     <div className="rounded-2xl overflow-hidden shadow-2xl">
@@ -146,26 +145,7 @@ function FirebasePlayer({ src, title }: { src: string; title: string }) {
             </a>
           </div>
         </div>
-      ) : (
-        <div className="bg-black rounded-2xl overflow-hidden">
-          <video
-            src={src}
-            controls
-            autoPlay={false}
-            className="w-full max-h-[70vh] bg-black"
-            data-testid="firebase-video-player"
-            onLoadedData={() => setStatus("playing")}
-            onError={() => setStatus("error")}
-            onTimeUpdate={(e) => {
-              if ((e.target as HTMLVideoElement).currentTime > 10) {
-                logActivity("video", sessionId ?? src);
-              }
-            }}
-          >
-            Your browser does not support video playback.
-          </video>
-        </div>
-      )}
+      ) : null}
     </div>
   );
 }
