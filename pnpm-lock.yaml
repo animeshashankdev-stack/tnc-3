@@ -201,7 +201,7 @@ importers:
         specifier: ^5.0.6
         version: 5.0.6
       '@types/node':
-        specifier: 'catalog:'
+        specifier: ^25.6.2
         version: 25.6.2
       esbuild:
         specifier: 0.27.3
